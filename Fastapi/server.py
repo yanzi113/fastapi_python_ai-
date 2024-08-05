@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from time import sleep
 from sse_starlette.sse import EventSourceResponse
+from langchain_openai import ChatOpenAI
 app = FastAPI()
 
 
@@ -28,21 +29,42 @@ async def create_item(item: Item):
 class StreamData(BaseModel):
     data: str
 
+    # glm4 Model
+glm4_model = ChatOpenAI(
+        model_name="gLm-4-air",
+        openai_api_base="https://open.bigmodel.cn/api/paas/v4",
+        openai_api_key="839815e495bcc411b3005d0a8f8ff15f.sM3vvPVaJLv1y998",
+        streaming=True,
+        verbose=True,
+    )
+# @app.post("/stream")
+# async def stream_run(
+#         data: StreamData,
+# ):
+#     print('收到前端数据：{}' .format(data.data))
+#     # 定义一个简单的生成器
+#     def generator(StreamData):
+#         yield 'data: start'
+#         sleep(1)
+#         yield 'data: 服务器收到前端{}'.format(data.data)
+#         sleep(1)
+#         yield 'data: end'
+#
+#     return EventSourceResponse(generator(data))
+
 @app.post("/stream")
 async def stream_run(
-        data: StreamData,
+    data: StreamData
 ):
-    print('收到前端数据：{}' .format(data.data))
-    # 定义一个简单的生成器
-    def generator(StreamData):
-        yield 'data: start'
-        sleep(1)
-        yield 'data: 服务器收到前端{}'.format(data.data)
-        sleep(1)
-        yield 'data: end'
+    print('收到前端数据： {}'.format(data.data))
 
-    return EventSourceResponse(generator(data))
-    
+    def glm4_talk(data:StreamData):
+        for chunk in glm4_model.stream(data.data):
+            print('-------------')
+            print(chunk.content)
+            yield chunk.content
+    # 接收到输入的数据，开始事件流发送
+    return EventSourceResponse(glm4_talk(data))
 
 @app.get("/test")
 def read_root():
