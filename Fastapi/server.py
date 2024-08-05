@@ -6,7 +6,6 @@ from sse_starlette.sse import EventSourceResponse
 from langchain_openai import ChatOpenAI
 app = FastAPI()
 
-
 class Item(BaseModel):
     name: str
     price: float
